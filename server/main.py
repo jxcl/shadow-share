@@ -9,7 +9,6 @@ app.debug = True
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
     if request.method == 'POST':
-        print(request.files)
         f = request.files['file']
         f.save(path.join(app.config['UPLOAD_FOLDER'],
                          "{}.gpg".format(user_name)))
@@ -17,4 +16,4 @@ def store(user_name):
 
 @app.route("/<user_name>/retrieve/")
 def retrieve(user_name):
-    return "Hello {}!".format(user_name)
+
