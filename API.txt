@@ -11,14 +11,14 @@ Retrieve (Sent)
 
 {
   "message": SUCCESS || FAIL
-  "filename": "Original filename.",
+  "file_name": "Original filename.",
   "data": "base64 encoded file data"
 }
 
 Register Key (Expected)
 
 {
-  "username": "proposed username",
+  "user_name": "proposed username",
   "public_key": "Armored public key"
 }
 
@@ -33,13 +33,13 @@ Register Key (Returned)
 Get Key (Expected)
 
 {
-  "username": "username for key"
+  "user_name": "username for key"
 }
 
 Get Key (Returned)
 
 {
-  "username": "username for key",
+  "user_name": "username for key",
   "public_key": "Armored public key"
 }
 
