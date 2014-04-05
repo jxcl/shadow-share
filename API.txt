@@ -14,3 +14,32 @@ Retrieve (Sent)
   "filename": "Original filename.",
   "data": "base64 encoded file data"
 }
+
+Register Key (Expected)
+
+{
+  "username": "proposed username",
+  "public_key": "Armored public key"
+}
+
+Register Key (Returned)
+
+{
+  "message": "SUCCESS" || "FAIL",
+  (if fail)
+  "error": "Error message."
+}
+
+Get Key (Expected)
+
+{
+  "username": "username for key"
+}
+
+Get Key (Returned)
+
+{
+  "username": "username for key",
+  "public_key": "Armored public key"
+}
+
