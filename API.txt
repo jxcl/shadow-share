@@ -10,7 +10,7 @@ Store (Expected)
 Retrieve (Sent)
 
 {
-  "message": SUCCESS || FAIL
+  "status": SUCCESS || FAIL
   "file_name": "Original filename.",
   "data": "base64 encoded file data"
 }
@@ -25,9 +25,9 @@ Register Key (Expected)
 Register Key (Returned)
 
 {
-  "message": "SUCCESS" || "FAIL",
+  "status": "SUCCESS" || "FAIL",
   (if fail)
-  "error": "Error message."
+  "error_message": "Error message."
 }
 
 Get Key (Expected)

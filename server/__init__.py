@@ -39,14 +39,14 @@ def store(user_name):
         with open(file_path, "wb") as fp:
             fp.write(file_data)
 
-        return json.jsonify({"message": "SUCCESS"})
+        return json.jsonify({"status": "SUCCESS"})
 
 def open_and_encode_file(file_path):
     with open(file_path, "rb") as fp:
         bts = fp.read()
         b64_bytes = base64.b64encode(bts).decode("utf-8")
         response = {
-            "message": "SUCCESS",
+            "status": "SUCCESS",
             "filename": "dummy_filename",
             "data": b64_bytes
             }
@@ -63,13 +63,13 @@ def retrieve(user_name):
             return json.jsonify(response)
         else:
             response = {
-                "message": "FAIL",
-                "error": "User does not have a file stored."
+                "status": "FAIL",
+                "error_message": "User does not have a file stored."
                }
             return json.jsonify(response)
     else:
         response = {
-            "message": "FAIL",
-            "error": "User does not exist"
+            "status": "FAIL",
+            "error_message": "User does not exist"
             }
         return json.jsonify(response)
