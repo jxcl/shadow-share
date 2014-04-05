@@ -10,10 +10,16 @@ class EnigDB():
     def user_exists(self, user_name):
         self.cursor.execute("select * from users where user_name=?",
                     (user_name,))
-        if (self.cursor.fetchone() == None):
+
+        result = self.cursor.fetchone()
+        if (result == None):
             return False
         else:
-            return True
+            return (True, result)
+
+    def register_user(self, user_name, key):
+        self.cursor.execute("INSERT INTO users VALUES (?, ?)",
+                            (user_name, key))
 
     def close(self):
         self.rv.close()

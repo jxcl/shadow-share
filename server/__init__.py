@@ -1,6 +1,7 @@
 from flask import Flask, request, json, g
 from os import path
 import base64
+import gnupg
 
 import server.enig_db
 
@@ -19,11 +20,6 @@ def get_db():
 def close_db(error):
     if hasattr(g, "enig_db"):
         g.enig_db.close()
-
-@app.route("/<user_name>/register_key/")
-def register(user_name):
-    if request.method == 'POST':
-        req_qb = request.get_json()
 
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
@@ -71,5 +67,62 @@ def retrieve(user_name):
         response = {
             "status": "FAIL",
             "error_message": "User does not exist"
+            }
+        return json.jsonify(response)
+
+def key_valid(key_data):
+    gpg = gnupg.GPG(gnupghome="gnupg")
+    import_result = gpg.import_keys(key_data)
+
+    if import_result.count == 0:
+        gpg.delete_keys(import_result.fingerprints[0])
+        return True
+    else:
+        return False
+
+@app.route("/<user_name>/register_key/")
+def register_key(user_name):
+    db = get_db()
+
+    if not db.user_exists(user_name):
+        response = {
+            "status": "FAIL",
+            "error_message": "Username already taken."
+            }
+
+        return json.jsonify(response)
+    else:
+        req_obj = request.get_json()
+        key = req_obj["public_key"]
+        if key_valid(key):
+            db.register_user(user_name, key)
+            response = {
+                "status": "SUCCESS"
+                }
+            return json.jsonify(response)
+        else:
+            response = {
+                "status": "FAIL",
+                "error_message": "The provided key is not valid."
+                }
+
+@app.route("/<user_name>/get_key/")
+def get_key(user_name):
+    db = get_db()
+
+    db_lookup_result = db.user_exists(user_name)
+
+    if not db_lookup_result:
+        response = {
+            "status": "FAIL",
+            "error_message": "No such user exists."
+            }
+        return json.jsonify(response)
+
+    else:
+        response = {
+            "status": "SUCCESS",
+            "user_name": user_name,
+            "public_key": db_lookup_result[1]["public_key"]
             }
         return json.jsonify(response)
