@@ -10,9 +10,16 @@ app.debug = True
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
     if request.method == 'POST':
-        f = request.files['file']
-        f.save(path.join(app.config['UPLOAD_FOLDER'],
-                         "{}.gpg".format(user_name)))
+        req_obj = request.get_json()
+
+        file_data = base64.b64decode(req_obj["file_data"])
+        file_name = req_obj["file_name"]
+        file_path = path.join(app.config['UPLOAD_FOLDER'],
+                              "{}.stor".format(user_name))
+
+        with open(file_path, "wb") as fp:
+            fp.write(file_data)
+
         return json.jsonify({"message": "SUCCESS"})
 
 @app.route("/<user_name>/retrieve/")
