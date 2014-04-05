@@ -41,22 +41,35 @@ def store(user_name):
 
         return json.jsonify({"message": "SUCCESS"})
 
+def open_and_encode_file(file_path):
+    with open(file_path, "rb") as fp:
+        bts = fp.read()
+        b64_bytes = base64.b64encode(bts).decode("utf-8")
+        response = {
+            "message": "SUCCESS",
+            "filename": "dummy_filename",
+            "data": b64_bytes
+            }
+    return response
+
 @app.route("/<user_name>/retrieve/")
 def retrieve(user_name):
     file_path = path.join(app.config['UPLOAD_FOLDER'],
                           "{}.gpg".format(user_name))
     db = get_db()
     if db.user_exists(user_name):
-        with open(file_path, "rb") as fp:
-            bts = fp.read()
-            b64_bytes = base64.b64encode(bts).decode("utf-8")
+        if path.exists(file_path):
+            response = open_and_encode_file(file_path)
+            return json.jsonify(response)
+        else:
             response = {
-                "message": "SUCCESS",
-                "filename": "dummy_filename",
-                "data": b64_bytes
-                }
-
-        return json.jsonify(response)
+                "message": "FAIL",
+                "error": "User does not have a file stored."
+               }
+            return json.jsonify(response)
     else:
-        return "No user!"
-
+        response = {
+            "message": "FAIL",
+            "error": "User does not exist"
+            }
+        return json.jsonify(response)
