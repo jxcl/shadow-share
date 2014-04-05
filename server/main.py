@@ -26,6 +26,7 @@ def retrieve(user_name):
         b64_bytes = base64.b64encode(bts).decode("utf-8")
         response = {
             "message": "SUCCESS",
+            "filename": "dummy_filename"
             "data": b64_bytes
             }
 
