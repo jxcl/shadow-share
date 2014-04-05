@@ -1,0 +1,16 @@
+Quick Description Of Data
+
+Store (Expected)
+{
+  "file_data": "base64 encoded file data",
+  "file_name": "local file name",
+  "file_target_user": "the person for whom the file is meant"
+}
+
+Retrieve (Sent)
+
+{
+  "message": SUCCESS || FAIL
+  "filename": "Original filename.",
+  "data": "base64 encoded file data"
+}
