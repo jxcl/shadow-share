@@ -3,6 +3,7 @@ import requests
 import base64
 import gnupg
 import re
+import os.path
 
 def get_our_key_info(gpg, regexp):
     private_keys = gpg.list_keys(True)
@@ -32,7 +33,7 @@ def put(file_name):
     gpg = gnupg.GPG(gnupghome='gnupg')
     p = re.compile('^(.+) <.*$')
     our_user_name, our_fingerprint = get_our_key_info(gpg, p)
-    put(our_user_name, file_name)
+    put_for(our_user_name, file_name)
 
 def put_for(user_name, file_name):
 
@@ -55,7 +56,7 @@ def put_for(user_name, file_name):
                                    )
         b64_bytes = base64.b64encode(encrypted_data.data).decode('utf-8')
         payload = {
-            "file_name": file_name,
+            "file_name": os.path.basename(file_name),
             "file_data": b64_bytes,
             "file_target_user": user_name
             }    
@@ -74,6 +75,7 @@ def get_from(user_name):
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
+        get_key(user_name)
         g = gnupg.GPG(gnupghome='gnupg')
         encrypted_file_data = base64.b64decode(req_obj["data"])
         decrypted_data = g.decrypt(encrypted_file_data)

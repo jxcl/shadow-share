@@ -3,7 +3,6 @@
 from client import client
 import argparse
 
-
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
 
@@ -32,4 +31,4 @@ elif args.command == "register":
 elif args.command == "get":
     client.get()
 elif args.command == "put":
-    client.put(file_name)
+    client.put(args.file_name)
