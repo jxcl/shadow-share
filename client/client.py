@@ -28,7 +28,13 @@ def auto_key(gpg, regexp, user_name):
         key = check_key(regexp, gpg.list_keys(), user_name)
     return key
 
-def store(user_name, file_name):
+def put(file_name):
+    gpg = gnupg.GPG(gnupghome='gnupg')
+    p = re.compile('^(.+) <.*$')
+    our_user_name, our_fingerprint = get_our_key_info(gpg, p)
+    put(our_user_name, file_name)
+
+def put_for(user_name, file_name):
 
     p = re.compile('^(.+) <.*$')
     g = gnupg.GPG(gnupghome='gnupg')
@@ -55,8 +61,15 @@ def store(user_name, file_name):
             }    
         headers = {'content-type': 'application/json'}
         requests.post(url,data=json.dumps(payload), headers=headers)
-            
-def retrieve(user_name):
+
+
+def get():
+    gpg = gnupg.GPG(gnupghome='gnupg')
+    p = re.compile('^(.+) <.*$')
+    our_user_name, our_fingerprint = get_our_key_info(gpg, p)
+    get_from(our_user_name)
+
+def get_from(user_name):
     url = 'http://localhost:5000/{}/retrieve/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
