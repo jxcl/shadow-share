@@ -21,15 +21,15 @@ def close_db(error):
     if hasattr(g, "enig_db"):
         g.enig_db.close()
 
-def file_record(user_name, target_user=None):
+def file_record(user_name, original_file_name, target_user=None):
     db = get_db()
 
     record = db.get_file_record(user_name)
 
     if record is None:
-        db.create_file_record(user_name, target_user)
+        db.create_file_record(user_name, target_user, original_file_name)
     else:
-        db.update_file_record(user_name, target_user)
+        db.update_file_record(user_name, target_user, original_file_name)
 
 
 @app.route("/<user_name>/store/", methods=["POST"])
@@ -37,40 +37,40 @@ def store(user_name):
     if request.method == 'POST':
         db = get_db()
         req_obj = request.get_json()
-
-        print(req_obj["file_data"])
         file_data = base64.b64decode(req_obj["file_data"])
         file_name = req_obj["file_name"]
         file_path = path.join(app.config['UPLOAD_FOLDER'],
                               "{}.stor".format(user_name))
         file_target_user = req_obj["file_target_user"]
-
-        file_record(user_name, file_target_user)
+        file_record(user_name, file_name, file_target_user)
 
         with open(file_path, "wb") as fp:
             fp.write(file_data)
 
         return json.jsonify({"status": "SUCCESS"})
 
-def open_and_encode_file(file_path):
+def open_and_encode_file(user_name, file_path):
+    db = get_db()
+    file_name = db.get_file_name(user_name)
+
     with open(file_path, "rb") as fp:
         bts = fp.read()
         b64_bytes = base64.b64encode(bts).decode("utf-8")
         response = {
             "status": "SUCCESS",
-            "filename": "dummy_filename",
+            "file_name": file_name,
             "data": b64_bytes
             }
     return response
 
 @app.route("/<user_name>/retrieve/")
 def retrieve(user_name):
+    db = get_db()
     file_path = path.join(app.config['UPLOAD_FOLDER'],
                           "{}.stor".format(user_name))
-    db = get_db()
     if db.user_exists(user_name):
         if path.exists(file_path):
-            response = open_and_encode_file(file_path)
+            response = open_and_encode_file(user_name, file_path)
             return json.jsonify(response)
         else:
             response = {

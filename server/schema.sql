@@ -9,5 +9,6 @@ create table users (
 create table files (
    user_name text primary key,
    target_user_name text,
+   original_file_name text,
    date_uploaded text
 );

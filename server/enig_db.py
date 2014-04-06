@@ -40,12 +40,20 @@ class EnigDB():
                                WHERE user_name=?""",
                             (target_user, timestamp, user_name))
 
-    def create_file_record(self, user_name, target_user):
+    def get_file_name(self, user_name):
+        self.cursor.execute("SELECT * from files where user_name=?",
+                            (user_name,))
+        result = self.cursor.fetchone()['original_file_name']
+        return result
+
+    def create_file_record(self, user_name, target_user,
+                           original_file_name):
         timestamp = datetime.strftime(datetime.now(),
                                       "%Y-%m-%dT%H:%M:%S")
 
-        self.cursor.execute("INSERT INTO files VALUES (?, ?, ?)",
-                            (user_name, target_user, timestamp))
+        self.cursor.execute("INSERT INTO files VALUES (?, ?, ?, ?)",
+                            (user_name, target_user,
+                             original_file_name, timestamp))
         self.conn.commit()
 
     def close(self):
