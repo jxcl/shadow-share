@@ -38,11 +38,12 @@ def store(user_name):
         db = get_db()
         req_obj = request.get_json()
 
+        print(req_obj["file_data"])
         file_data = base64.b64decode(req_obj["file_data"])
         file_name = req_obj["file_name"]
         file_path = path.join(app.config['UPLOAD_FOLDER'],
                               "{}.stor".format(user_name))
-        file_target_user = req_object["file_target_user"]
+        file_target_user = req_obj["file_target_user"]
 
         file_record(user_name, file_target_user)
 
@@ -65,7 +66,7 @@ def open_and_encode_file(file_path):
 @app.route("/<user_name>/retrieve/")
 def retrieve(user_name):
     file_path = path.join(app.config['UPLOAD_FOLDER'],
-                          "{}.gpg".format(user_name))
+                          "{}.stor".format(user_name))
     db = get_db()
     if db.user_exists(user_name):
         if path.exists(file_path):
