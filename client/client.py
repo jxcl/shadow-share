@@ -5,28 +5,42 @@ import base64
 import gnupg
 import re
 
-def store(user_name, file_name):
-    url = 'http://localhost:5000/{}/store/'.format(user_name)
-    p = re.compile('^(.+) <.*$')
+def get_our_key_info(gpg, regexp):
+    private_keys = gpg.list_keys(True)
+    our_key = private_keys[0]
+    our_uid = our_key['uids'][0]
+    our_user_name = regexp.match(our_uid).group(1)
+    our_fingerprint = our_key['fingerprint']
+    return (our_user_name, our_fingerprint)
 
+def store(user_name, file_name):
+
+    p = re.compile('^(.+) <.*$')
+    g = gnupg.GPG(gnupghome='gnupg')
+    our_user_name, our_fingerprint = get_our_key_info(g, p)
+    print(our_user_name)
+    url = 'http://localhost:5000/{}/store/'.format(our_user_name)
     with open(file_name, "rb") as fp:
         bts = fp.read()
-        g = gnupg.GPG(gnupghome='gnupg')
+
         public_keys = g.list_keys()
         for key in public_keys:
             s = p.match(key['uids'][0]).group(1)
             if s == user_name:
                 # encrypt with gpg and sign with private key
-                encrypted_data = g.encrypt(bts, 
-                                                 key['fingerprint'],
-                                                 sign=g.list_keys(True)[0]['fingerprint'],
-                                                 armor=False
-                                                 )
-                print(encrypted_data.data)
+                encrypted_data = g.encrypt(bts,
+                                           key['fingerprint'],
+                                           sign=our_fingerprint,
+                                           armor=False,
+                                           #DO NOT FUCKING LEAVE THIS HERE
+                                           always_trust=True
+                                           )
+
                 b64_bytes = base64.b64encode(encrypted_data.data).decode('utf-8')
                 payload = {
                     "file_name": file_name,
-                    "file_data": b64_bytes
+                    "file_data": b64_bytes,
+                    "file_target_user": user_name
                     }
 
     headers = {'content-type': 'application/json'}
@@ -69,13 +83,14 @@ def register(user_name):
     print(r.json())
 
 def get_key(user_name):
-    url = 'http://localhost:5000/{}/register/'.format(user_name)
+    url = 'http://localhost:5000/{}/get_key/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         print('Get_Key Succeeded')
         g = gnupg.GPG(gnupghome='gnupg')
-        g.import_keys(req_obj['public_key'])
+        imported_key = g.import_keys(req_obj['public_key'])
+        print(g.list_keys())
     else:
         print('Failed: {}'.format(req_obj['error_message']))
 
