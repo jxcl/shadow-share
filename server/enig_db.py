@@ -36,7 +36,9 @@ class EnigDB():
                                       "%Y-%m-%dT%H:%M:%S")
 
         self.cursor.execute("""UPDATE files
-                               SET target_user_name=?, timestamp=?, original_file_name=?
+                               SET target_user_name=?,
+                               date_uploaded=?,
+                               original_file_name=?
                                WHERE user_name=?""",
                             (target_user, timestamp, user_name, original_file_name))
 
