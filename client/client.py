@@ -61,18 +61,18 @@ def retrieve(user_name):
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        print('Successfully Retrieved')
         g = gnupg.GPG(gnupghome='gnupg')
         encrypted_file_data = base64.b64decode(req_obj["data"])
         decrypted_data = g.decrypt(encrypted_file_data)
         # verify that data was signed
         if decrypted_data.signature_id is not None:
-            print('Signature Verified with Trust: ',decrypted_data.trust_text)
+            print('Signature verified with ',decrypted_data.trust_text)
             file_name = req_obj["file_name"]
             with open(file_name,"wb") as fp:
                 fp.write(decrypted_data.data)
+            print('Successfully retrieved file: ', file_name)
         else:
-            print('Signature Verification Failed')
+            print('Signature verification failed.')
     else:
         print('Failed: {}'.format(req_obj['error_message']))
 
@@ -95,9 +95,9 @@ def get_key(user_name):
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        print('Get_Key Succeeded')
         g = gnupg.GPG(gnupghome='gnupg')
         imported_key = g.import_keys(req_obj['public_key'])
         return imported_key
     else:
         print('Failed: {}'.format(req_obj['error_message']))
+        return None
