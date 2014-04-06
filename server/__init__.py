@@ -95,8 +95,7 @@ def key_valid(key_data):
         return False
 
 @app.route("/<user_name>/register/")
-def register_key(user_name, methods=["POST"]):
-
+def register_key(user_name):
     db = get_db()
 
     if db.user_exists(user_name):
