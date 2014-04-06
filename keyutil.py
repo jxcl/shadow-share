@@ -12,7 +12,7 @@ def clean_keys(gpg):
             gpg.delete_keys(key['fingerprint'])
 
 def list_keys(gpg):
-    print gpg.list_keys()
+    print(gpg.list_keys())
 
 if __name__ == "__main__":
     gpg = gnupg.GPG(gnupghome="gnupg")
