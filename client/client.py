@@ -1,6 +1,5 @@
 import json
 import requests
-import argparse
 import base64
 import gnupg
 import re
@@ -13,6 +12,24 @@ def get_our_key_info(gpg, regexp):
     our_fingerprint = our_key['fingerprint']
     return (our_user_name, our_fingerprint)
 
+def check_key(regexp, key_list, user_name):
+    for key in key_list:
+        s = regexp.match(key['uids'][0]).group(1)
+        if s == user_name:
+            found_key = True
+            return key
+    return None
+    
+
+def auto_key(gpg, regexp, user_name):
+    found_key = False
+    public_keys = gpg.list_keys()
+    key = check_key(regexp, public_keys, user_name)
+    # encrypt with gpg and sign with private key
+    if key is None:
+        key = get_key(user_name)
+    return key
+
 def store(user_name, file_name):
 
     p = re.compile('^(.+) <.*$')
@@ -22,30 +39,27 @@ def store(user_name, file_name):
     url = 'http://localhost:5000/{}/store/'.format(our_user_name)
     with open(file_name, "rb") as fp:
         bts = fp.read()
-
-        public_keys = g.list_keys()
-        for key in public_keys:
-            s = p.match(key['uids'][0]).group(1)
-            if s == user_name:
-                # encrypt with gpg and sign with private key
-                encrypted_data = g.encrypt(bts,
-                                           key['fingerprint'],
-                                           sign=our_fingerprint,
-                                           armor=False,
-                                           #DO NOT FUCKING LEAVE THIS HERE
-                                           always_trust=True
-                                           )
-
-                b64_bytes = base64.b64encode(encrypted_data.data).decode('utf-8')
-                payload = {
-                    "file_name": file_name,
-                    "file_data": b64_bytes,
-                    "file_target_user": user_name
-                    }
-
-    headers = {'content-type': 'application/json'}
-    r = requests.post(url,data=json.dumps(payload), headers=headers)
-
+        key = auto_key(g, p, user_name)
+        if key is None:
+            print('User Not Found')
+            return
+        encrypted_data = g.encrypt(bts,
+                                   key['fingerprint'],
+                                   sign=our_fingerprint,
+                                   armor=False,
+                                   #DO NOT FUCKING LEAVE THIS HERE
+                                   always_trust=True
+                                   )
+        b64_bytes = base64.b64encode(encrypted_data.data).decode('utf-8')
+        payload = {
+            "file_name": file_name,
+            "file_data": b64_bytes,
+            "file_target_user": user_name
+            }    
+        headers = {'content-type': 'application/json'}
+        r = requests.post(url,data=json.dumps(payload), headers=headers)
+    
+        
 def retrieve(user_name):
     url = 'http://localhost:5000/{}/retrieve/'.format(user_name)
     r = requests.get(url)
@@ -68,6 +82,9 @@ def retrieve(user_name):
     else:
         print('Failed: {}'.format(obj_req['error_message']))
 
+def get_private_keyid(gpg):
+    return gpg.list_keys(True)[0]['keyid']
+
 def register(user_name):
     url = 'http://localhost:5000/{}/register/'.format(user_name)
     g = gnupg.GPG(gnupghome='gnupg')
@@ -76,8 +93,7 @@ def register(user_name):
         key_length = 512,
         name_real = user_name
         )
-    print(g.list_keys())
-    armoured_pub_key = g.export_keys('1897B6CCEFC76D7E')
+    armoured_pub_key = g.export_keys(get_private_keyid)
     payload = {
         "user_name" : user_name,
         "public_key" : armoured_pub_key
@@ -96,31 +112,7 @@ def get_key(user_name):
         g = gnupg.GPG(gnupghome='gnupg')
         imported_key = g.import_keys(req_obj['public_key'])
         print(g.list_keys())
+        return imported_key
     else:
         print('Failed: {}'.format(req_obj['error_message']))
 
-parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(dest='command')
-
-parser_store = subparsers.add_parser('store')
-parser_store.add_argument('user_name')
-parser_store.add_argument('file_name')
-
-parser_retrieve = subparsers.add_parser('retrieve')
-parser_retrieve.add_argument('user_name')
-
-parser_register = subparsers.add_parser('register')
-parser_register.add_argument('user_name')
-
-parser_get_key = subparsers.add_parser('get_key')
-parser_get_key.add_argument('user_name')
-args = parser.parse_args()
-
-if args.command == "store":
-    store(args.user_name, args.file_name)
-elif args.command == "retrieve":
-    retrieve(args.user_name)
-elif args.command == "register":
-    register(args.user_name)
-elif args.command == "get_key":
-    get_key(args.user_name)
