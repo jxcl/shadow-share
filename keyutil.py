@@ -16,12 +16,21 @@ def list_keys(gpg, private):
 
 if __name__ == "__main__":
     gpg = gnupg.GPG(gnupghome="gnupg")
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='command')
 
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "clean":
-            clean_keys(gpg)
-        elif sys.argv[1] == "list":
-            if len(sys.argv) > 2 and sys.argv[2] == "priv":
-                list_keys(gpg, True)
-            else:
-                list_keys(gpg, False)
+    parser_clean = subparsers.add_parser('clean')
+    parser_list = subparsers.add_parser('list')
+    parser_list.add_argument("--priv", action="store_true")
+
+    parser_sign = subparsers.add_parser('sign')
+    parser_sign.add_argument("key_id")
+
+    args = parser.parse_args()
+
+    if args.command == "clean":
+        clean_keys(gpg)
+    if args.command == "list":
+        list_keys(gpg, args.priv)
+    if args.command == "sign":
+        sign_key(gpg, args.key_id)
