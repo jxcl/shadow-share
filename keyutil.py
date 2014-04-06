@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import gnupg
 import argparse
 import sys
