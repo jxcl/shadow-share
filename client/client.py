@@ -93,7 +93,7 @@ def register(user_name):
         key_length = 512,
         name_real = user_name
         )
-    armoured_pub_key = g.export_keys(get_private_keyid)
+    armoured_pub_key = g.export_keys(get_private_keyid(g))
     payload = {
         "user_name" : user_name,
         "public_key" : armoured_pub_key
