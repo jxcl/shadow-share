@@ -3,7 +3,7 @@ from os import path
 import base64
 import gnupg
 
-import server.enig_db
+from server import enig_db
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -35,7 +35,7 @@ def file_record(user_name, original_file_name, target_user=None):
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
     if request.method == 'POST':
-        db = get_db()
+
         req_obj = request.get_json()
         file_data = base64.b64decode(req_obj["file_data"])
         file_name = req_obj["file_name"]
