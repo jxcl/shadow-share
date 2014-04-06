@@ -88,13 +88,13 @@ def key_valid(key_data):
     gpg = gnupg.GPG(gnupghome="gnupg")
     import_result = gpg.import_keys(key_data)
 
-    if import_result.count == 0:
+    if import_result.count == 1:
         gpg.delete_keys(import_result.fingerprints[0])
         return True
     else:
         return False
 
-@app.route("/<user_name>/register/")
+@app.route("/<user_name>/register/", methods=["POST"])
 def register_key(user_name):
     db = get_db()
 
@@ -126,6 +126,7 @@ def register_key(user_name):
                 "status": "FAIL",
                 "error_message": "The provided key is not valid."
                 }
+            return json.jsonify(response)
 
 @app.route("/<user_name>/get_key/")
 def get_key(user_name):
