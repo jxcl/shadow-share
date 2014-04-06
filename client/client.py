@@ -47,20 +47,24 @@ def store(user_name, file_name):
     r = requests.post(url,data=json.dumps(payload), headers=headers)
 
 def retrieve(user_name):
-    url = 'http://localhost:5000/{}/store/'.format(user_name)
+    url = 'http://localhost:5000/{}/retrieve/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         print('Successfully Retrieved')
         g = gnupg.GPG(gnupghome='gnupg')
-        encrypted_file_data = base64.b64decode(req_obj["file_data"])
-        decrypted_data = g.dcrypt(encrypted_file_data)
+        encrypted_file_data = base64.b64decode(req_obj["data"])
+        decrypted_data = g.decrypt(encrypted_file_data)
         print(decrypted_data)
         # verify that data was signed
-        file_name = req_obj["file_name"]
-
-        with open(file_name,"wb") as fp:
-            fp.write(file_data)
+        if decrypted_data.signature_id is not None:
+            print('Signature Verified with Trust: ',decrypted_data.trust_text)
+            file_name = req_obj["file_name"]
+            with open(file_name,"wb") as fp:
+                fp.write(decrypted_data.data)
+        else:
+            print('Signature Verification Failed')
+        
     else:
         print('Failed: {}'.format(obj_req['error_message']))
 
@@ -72,12 +76,13 @@ def register(user_name):
         key_length = 512,
         name_real = user_name
         )
-
-    armoured_pub_key =g.export_keys('B0402C72CCDDF8A2')
+    print(g.list_keys())
+    armoured_pub_key = g.export_keys('1897B6CCEFC76D7E')
     payload = {
         "user_name" : user_name,
         "public_key" : armoured_pub_key
         }
+    print(armoured_pub_key)
     headers = {'content-type': 'application/json'}
     r = requests.post(url,data=json.dumps(payload), headers=headers)
     print(r.json())
@@ -113,8 +118,8 @@ args = parser.parse_args()
 
 if args.command == "store":
     store(args.user_name, args.file_name)
-elif args.command == "recieve":
-    recieve(args.user_name)
+elif args.command == "retrieve":
+    retrieve(args.user_name)
 elif args.command == "register":
     register(args.user_name)
 elif args.command == "get_key":
