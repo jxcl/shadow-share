@@ -16,9 +16,15 @@ def store(user_name, file_name):
         for key in public_keys:
             s = p.match(key['uids'][0]).group(1)
             if s == user_name:
-                b64_bytes = base64.b64encode(bts).decode("utf-8")
-                # encrypt with gpg
                 
+                # encrypt with gpg and sign with private key
+                encrypted_data = g.encrypt(bts, 
+                                                 key['fingerprint'],
+                                                 sign=g.list_keys(True)[0]['fingerprint'],
+                                                 armor=False
+                                                 )
+                print(encrypted_data.data)
+                b64_bytes = base64.b64encode(encrypted_data.data).decode('utf-8')
                 payload = {
                     "file_name": file_name,
                     "file_data": b64_bytes
@@ -32,8 +38,12 @@ def retrieve(user_name):
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        print('SUCCESSFULLY Retrieved')
-        file_data = base64.b64decode(req_obj["file_data"])
+        print('Successfully Retrieved')
+        g = gnupg.GPG(gnupghome='gnupg')
+        encrypted_file_data = base64.b64decode(req_obj["file_data"])
+        decrypted_data = g.dcrypt(encrypted_file_data)
+        print(decrypted_data)
+        # verify that data was signed
         file_name = req_obj["file_name"]
         
         with open(file_name,"wb") as fp:
