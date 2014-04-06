@@ -11,8 +11,8 @@ def clean_keys(gpg):
         if key['uids'][0] != secret_key_uid:
             gpg.delete_keys(key['fingerprint'])
 
-def list_keys(gpg):
-    print(gpg.list_keys())
+def list_keys(gpg, private):
+    print(gpg.list_keys(private))
 
 if __name__ == "__main__":
     gpg = gnupg.GPG(gnupghome="gnupg")
@@ -21,4 +21,7 @@ if __name__ == "__main__":
         if sys.argv[1] == "clean":
             clean_keys(gpg)
         elif sys.argv[1] == "list":
-            list_keys(gpg)
+            if len(sys.argv) > 2 and sys.argv[2] == "priv":
+                list_keys(gpg, True)
+            else:
+                list_keys(gpg, False)
