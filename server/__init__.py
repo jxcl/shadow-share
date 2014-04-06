@@ -21,9 +21,21 @@ def close_db(error):
     if hasattr(g, "enig_db"):
         g.enig_db.close()
 
+def file_record(user_name, target_user=None):
+    db = get_db()
+
+    record = db.get_file_record(user_name)
+
+    if record is None:
+        db.create_file_record(user_name, target_user)
+    else:
+        db.update_file_record(user_name, target_user)
+
+
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
     if request.method == 'POST':
+        db = get_db()
         req_obj = request.get_json()
 
         file_data = base64.b64decode(req_obj["file_data"])
@@ -31,6 +43,8 @@ def store(user_name):
         file_path = path.join(app.config['UPLOAD_FOLDER'],
                               "{}.stor".format(user_name))
         file_target_user = req_object["file_target_user"]
+
+        file_record(user_name, file_target_user)
 
         with open(file_path, "wb") as fp:
             fp.write(file_data)
@@ -81,10 +95,11 @@ def key_valid(key_data):
         return False
 
 @app.route("/<user_name>/register_key/")
-def register_key(user_name):
+def register_key(user_name, methods=["POST"]):
+
     db = get_db()
 
-    if not db.user_exists(user_name):
+    if db.user_exists(user_name):
         response = {
             "status": "FAIL",
             "error_message": "Username already taken."
@@ -93,6 +108,13 @@ def register_key(user_name):
         return json.jsonify(response)
     else:
         req_obj = request.get_json()
+        if "public_key" not in req_obj:
+            response = {
+                "status": "FAIL",
+                "error_message": "You must supply a public key."
+                }
+            return json.jsonify(response)
+
         key = req_obj["public_key"]
         if key_valid(key):
             db.register_user(user_name, key)
