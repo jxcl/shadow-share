@@ -94,7 +94,7 @@ def key_valid(key_data):
     else:
         return False
 
-@app.route("/<user_name>/register_key/")
+@app.route("/<user_name>/register/")
 def register_key(user_name, methods=["POST"]):
 
     db = get_db()
