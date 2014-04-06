@@ -16,7 +16,6 @@ def store(user_name, file_name):
         for key in public_keys:
             s = p.match(key['uids'][0]).group(1)
             if s == user_name:
-                
                 # encrypt with gpg and sign with private key
                 encrypted_data = g.encrypt(bts, 
                                                  key['fingerprint'],
@@ -29,7 +28,7 @@ def store(user_name, file_name):
                     "file_name": file_name,
                     "file_data": b64_bytes
                     }
-        
+
     headers = {'content-type': 'application/json'}
     r = requests.post(url,data=json.dumps(payload), headers=headers)
 
@@ -45,7 +44,7 @@ def retrieve(user_name):
         print(decrypted_data)
         # verify that data was signed
         file_name = req_obj["file_name"]
-        
+
         with open(file_name,"wb") as fp:
             fp.write(file_data)
     else:
@@ -53,21 +52,21 @@ def retrieve(user_name):
 
 def register(user_name):
     url = 'http://localhost:5000/{}/register/'.format(user_name)
-    g = gnupg.GPG(gnupghome='gnupg') 
+    g = gnupg.GPG(gnupghome='gnupg')
     input_data = g.gen_key_input(
-        key_type="RSA", 
-        key_length = 512, 
+        key_type="RSA",
+        key_length = 512,
         name_real = user_name
         )
 
-    armoured_pub_key =g.export_keys('8FD14534C087AA66') 
+    armoured_pub_key =g.export_keys('B0402C72CCDDF8A2')
     payload = {
         "user_name" : user_name,
         "public_key" : armoured_pub_key
         }
     headers = {'content-type': 'application/json'}
     r = requests.post(url,data=json.dumps(payload), headers=headers)
-    print(r.text)
+    print(r.json())
 
 def get_key(user_name):
     url = 'http://localhost:5000/{}/register/'.format(user_name)
@@ -75,7 +74,7 @@ def get_key(user_name):
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         print('Get_Key Succeeded')
-        g = gnupg.GPG(gnupghome='gnupg') 
+        g = gnupg.GPG(gnupghome='gnupg')
         g.import_keys(req_obj['public_key'])
     else:
         print('Failed: {}'.format(req_obj['error_message']))
