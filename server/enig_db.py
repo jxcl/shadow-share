@@ -41,7 +41,7 @@ class EnigDB():
                                original_file_name=?
                                WHERE user_name=?""",
                             (target_user, timestamp, user_name, original_file_name))
-        self.cursor.commit()
+        self.conn.commit()
 
     def get_file_name(self, user_name):
         self.cursor.execute("SELECT * from files where user_name=?",
