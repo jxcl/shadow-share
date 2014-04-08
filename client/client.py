@@ -26,7 +26,7 @@ def put(user_config, file_name):
 def put_for(user_config, user_name, file_name):
 
     p = re.compile('^(.+) <.*$')
-    gpg = user_config['gnupghome']
+    gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
     url = 'http://localhost:5000/{}/store/'.format(user_config['user_name'])
     with open(file_name, "rb") as fp:
         bts = fp.read()
@@ -59,9 +59,9 @@ def get_from(user_config, user_name):
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         get_key(user_name)
-        g = user_config['gnupghome']
+        gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
         encrypted_file_data = base64.b64decode(req_obj["data"])
-        decrypted_data = g.decrypt(encrypted_file_data)
+        decrypted_data = gpg.decrypt(encrypted_file_data)
         # verify that data was signed
         if decrypted_data.signature_id is not None:
             print('Signature verified with ',decrypted_data.trust_text)
@@ -76,7 +76,7 @@ def get_from(user_config, user_name):
 
 def register(user_config, user_name):
     url = 'http://localhost:5000/{}/register/'.format(user_name)
-    gpg = user_config['gnupghome']
+    gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
     armoured_pub_key = gpg.export_keys(user_config['key_id'])
     payload = {
         "user_name" : user_name,
@@ -90,7 +90,7 @@ def get_key(user_config, user_name):
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        gpg = user_config['gnupghome']
+        gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
         imported_key = gpg.import_keys(req_obj['public_key'])
         return imported_key
     else:
