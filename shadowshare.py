@@ -2,6 +2,10 @@
 
 from client import client
 import argparse
+import ss_config
+
+
+user_config = ss_config.load_or_create_config()
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
@@ -23,12 +27,12 @@ parser_put.add_argument('file_name')
 args = parser.parse_args()
 
 if args.command == "put-for":
-    client.put_for(args.user_name, args.file_name)
+    client.put_for(user_config, args.user_name, args.file_name)
 elif args.command == "get-from":
-    client.get_from(args.user_name)
+    client.get_from(user_config, args.user_name)
 elif args.command == "register":
-    client.register(args.user_name)
+    client.register(user_config, args.user_name)
 elif args.command == "get":
-    client.get()
+    client.get(user_config)
 elif args.command == "put":
-    client.put(args.file_name)
+    client.put(user_config, args.file_name)

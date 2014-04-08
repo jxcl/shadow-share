@@ -1,17 +1,8 @@
 import json
 import requests
 import base64
-import gnupg
 import re
 import os.path
-
-def get_our_key_info(gpg, regexp):
-    private_keys = gpg.list_keys(True)
-    our_key = private_keys[0]
-    our_uid = our_key['uids'][0]
-    our_user_name = regexp.match(our_uid).group(1)
-    our_fingerprint = our_key['fingerprint']
-    return (our_user_name, our_fingerprint)
 
 def check_key(regexp, key_list, user_name):
     for key in key_list:
@@ -29,27 +20,23 @@ def auto_key(gpg, regexp, user_name):
         key = check_key(regexp, gpg.list_keys(), user_name)
     return key
 
-def put(file_name):
-    gpg = gnupg.GPG(gnupghome='gnupg')
-    p = re.compile('^(.+) <.*$')
-    our_user_name, our_fingerprint = get_our_key_info(gpg, p)
-    put_for(our_user_name, file_name)
+def put(user_config, file_name):
+    put_for(user_config['user_name'], file_name)
 
-def put_for(user_name, file_name):
+def put_for(user_config, user_name, file_name):
 
     p = re.compile('^(.+) <.*$')
-    g = gnupg.GPG(gnupghome='gnupg')
-    our_user_name, our_fingerprint = get_our_key_info(g, p)
-    url = 'http://localhost:5000/{}/store/'.format(our_user_name)
+    gpg = user_config['gnupghome']
+    url = 'http://localhost:5000/{}/store/'.format(user_config['user_name'])
     with open(file_name, "rb") as fp:
         bts = fp.read()
-        key = auto_key(g, p, user_name)
+        key = auto_key(gpg, p, user_name)
         if key is None:
             print('User Not Found')
             return
-        encrypted_data = g.encrypt(bts,
+        encrypted_data = gpg.encrypt(bts,
                                    key['fingerprint'],
-                                   sign=our_fingerprint,
+                                   sign=user_config['fingerprint'],
                                    armor=False,
                                    #DO NOT FUCKING LEAVE THIS HERE
                                    always_trust=True
@@ -63,20 +50,16 @@ def put_for(user_name, file_name):
         headers = {'content-type': 'application/json'}
         requests.post(url,data=json.dumps(payload), headers=headers)
 
+def get(user_config):
+    get_from(user_config['user_name'])
 
-def get():
-    gpg = gnupg.GPG(gnupghome='gnupg')
-    p = re.compile('^(.+) <.*$')
-    our_user_name, our_fingerprint = get_our_key_info(gpg, p)
-    get_from(our_user_name)
-
-def get_from(user_name):
+def get_from(user_config, user_name):
     url = 'http://localhost:5000/{}/retrieve/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         get_key(user_name)
-        g = gnupg.GPG(gnupghome='gnupg')
+        g = user_config['gnupghome']
         encrypted_file_data = base64.b64decode(req_obj["data"])
         decrypted_data = g.decrypt(encrypted_file_data)
         # verify that data was signed
@@ -91,13 +74,10 @@ def get_from(user_name):
     else:
         print('Failed: {}'.format(req_obj['error_message']))
 
-def get_private_keyid(gpg):
-    return gpg.list_keys(True)[0]['keyid']
-
-def register(user_name):
+def register(user_config, user_name):
     url = 'http://localhost:5000/{}/register/'.format(user_name)
-    g = gnupg.GPG(gnupghome='gnupg')
-    armoured_pub_key = g.export_keys(get_private_keyid(g))
+    gpg = user_config['gnupghome']
+    armoured_pub_key = gpg.export_keys(user_config['key_id'])
     payload = {
         "user_name" : user_name,
         "public_key" : armoured_pub_key
@@ -105,13 +85,13 @@ def register(user_name):
     headers = {'content-type': 'application/json'}
     requests.post(url,data=json.dumps(payload), headers=headers)
 
-def get_key(user_name):
+def get_key(user_config, user_name):
     url = 'http://localhost:5000/{}/get_key/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        g = gnupg.GPG(gnupghome='gnupg')
-        imported_key = g.import_keys(req_obj['public_key'])
+        gpg = user_config['gnupghome']
+        imported_key = gpg.import_keys(req_obj['public_key'])
         return imported_key
     else:
         print('Failed: {}'.format(req_obj['error_message']))
