@@ -1,9 +1,7 @@
 #!/usr/bin/env python3.4
 
-from client import client
+from client import client, ss_config
 import argparse
-import ss_config
-
 
 user_config = ss_config.load_or_create_config()
 
