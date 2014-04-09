@@ -18,15 +18,14 @@ def auto_key(gpg, regexp, user_name):
     key = check_key(regexp, public_keys, user_name)
     # encrypt with gpg and sign with private key
     if key is None:
-        get_key(user_name)
+        get_key(gpg, user_name)
         key = check_key(regexp, gpg.list_keys(), user_name)
     return key
 
 def put(user_config, file_name):
-    put_for(user_config['user_name'], file_name)
+    put_for(user_config, user_config['user_name'], file_name)
 
 def put_for(user_config, user_name, file_name):
-
     p = re.compile('^(.+) <.*$')
     gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
     url = 'http://localhost:5000/{}/store/'.format(user_config['user_name'])
@@ -94,12 +93,11 @@ def register(user_config, user_name):
     else:
         print("Error: ", response['error_message'])
 
-def get_key(user_config, user_name):
+def get_key(gpg, user_name):
     url = 'http://localhost:5000/{}/get_key/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
-        gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
         imported_key = gpg.import_keys(req_obj['public_key'])
         return imported_key
     else:
