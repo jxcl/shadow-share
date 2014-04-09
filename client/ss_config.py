@@ -4,20 +4,21 @@ import json
 import gnupg
 from os import path
 
-def load_or_create_config():
-    config_directory = pathlib.Path(path.expanduser("~")) / ".config" / "shadow_share"
+CONFIG_DIRECTORY = pathlib.Path(path.expanduser("~")) / ".config" / "shadow_share"
 
-    if config_directory.exists():
-        config_file = config_directory / "config.json"
+def load_or_create_config():
+
+    if CONFIG_DIRECTORY.exists():
+        config_file = CONFIG_DIRECTORY / "config.json"
         if config_file.exists():
-            config = json.load(config_file.open())
+            config = json.load(config_file.open('r'))
         else:
-            config = new_config(config_directory)
+            config = new_config(CONFIG_DIRECTORY)
         return config
 
     else:
-        config_directory.mkdir(parents=True)
-        return new_config(config_directory)
+        CONFIG_DIRECTORY.mkdir(parents=True)
+        return new_config(CONFIG_DIRECTORY)
 
 def ask_for_key(gpg):
     private_keys = gpg.list_keys(True)
@@ -57,9 +58,9 @@ def ask_for_key(gpg):
         key_id = private_keys[selection]['keyid']
         return (key_id, key_fingerprint)
 
-def new_config(config_directory):
+def new_config(CONFIG_DIRECTORY):
     home_directory = pathlib.Path(path.expanduser("~"))
-    config_file = config_directory / "config.json"
+    config_file = CONFIG_DIRECTORY / "config.json"
 
     gpg_spiel = '''\
                    ShadowShare uses GPG blah blah blah.'''
@@ -68,7 +69,7 @@ def new_config(config_directory):
     if answer.lower() == 'y':
         gnupg_home = home_directory / ".gnupg"
     else:
-        gnupg_home = config_directory / "gnupg"
+        gnupg_home = CONFIG_DIRECTORY / "gnupg"
 
     gpg = gnupg.GPG(gnupghome=str(gnupg_home))
 
@@ -85,3 +86,9 @@ def new_config(config_directory):
 
     return config
 
+def add_user_name(user_name):
+    config_file = CONFIG_DIRECTORY / "config.json"
+
+    config = json.load(config_file.open("r"))
+    config['user_name'] = user_name
+    json.dump(config, config_file.open("w"))

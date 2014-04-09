@@ -24,6 +24,10 @@ parser_put.add_argument('file_name')
 
 args = parser.parse_args()
 
+if 'user_name' not in user_config and args.command != "register":
+    print("You have not registered with the server yet.")
+    exit(1)
+
 if args.command == "put-for":
     client.put_for(user_config, args.user_name, args.file_name)
 elif args.command == "get-from":

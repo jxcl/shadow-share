@@ -3,11 +3,13 @@ import requests
 import base64
 import re
 import os.path
+import gnupg
+from client import ss_config
 
 def check_key(regexp, key_list, user_name):
     for key in key_list:
         s = regexp.match(key['uids'][0]).group(1)
-        if s == user_name:            
+        if s == user_name:
             return key
     return None
 
@@ -46,7 +48,7 @@ def put_for(user_config, user_name, file_name):
             "file_name": os.path.basename(file_name),
             "file_data": b64_bytes,
             "file_target_user": user_name
-            }    
+            }
         headers = {'content-type': 'application/json'}
         requests.post(url,data=json.dumps(payload), headers=headers)
 
@@ -83,7 +85,14 @@ def register(user_config, user_name):
         "public_key" : armoured_pub_key
         }
     headers = {'content-type': 'application/json'}
-    requests.post(url,data=json.dumps(payload), headers=headers)
+    response = requests.post(url,
+                             data=json.dumps(payload),
+                             headers=headers).json()
+
+    if response['status'] == 'SUCCESS':
+        ss_config.add_user_name(user_name)
+    else:
+        print("Error: ", response['error_message'])
 
 def get_key(user_config, user_name):
     url = 'http://localhost:5000/{}/get_key/'.format(user_name)
