@@ -21,8 +21,8 @@ def put(user_config, file_name):
 def put_for(user_config, user_name, file_name):
     p = re.compile('^(.+) <.*$')
     gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
-    url = 'http://localhost:5000/{}/store/'.format(user_config['user_name'])
-    remote_user_key = keys.get_key_for_user(gpg, user_name)
+    url = user_config['server_url'] + '/{}/store/'.format(user_config['user_name'])
+    remote_user_key = keys.get_key_for_user(gpg, user_config, user_name)
 
     with open(file_name, "rb") as fp:
         bts = fp.read()
@@ -47,12 +47,12 @@ def get(user_config):
     get_from(user_config, user_config['user_name'])
 
 def get_from(user_config, user_name):
-    url = 'http://localhost:5000/{}/retrieve/'.format(user_name)
+    url = user_config['server_url'] + '/{}/retrieve/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
         gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
-        remote_user = keys.get_key_for_user(gpg, user_name)
+        remote_user = keys.get_key_for_user(gpg, user_config, user_name)
         encrypted_file_data = base64.b64decode(req_obj["data"])
         decrypted_data = gpg.decrypt(encrypted_file_data)
         # verify that data was signed
@@ -68,7 +68,7 @@ def get_from(user_config, user_name):
         print('Failed: {}'.format(req_obj['error_message']))
 
 def register(user_config, user_name):
-    url = 'http://localhost:5000/{}/register/'.format(user_name)
+    url = user_config['server_url'] + '/{}/register/'.format(user_name)
     gpg = gnupg.GPG(gnupghome=user_config['gnupghome'])
     armoured_pub_key = gpg.export_keys(user_config['key_id'])
     payload = {

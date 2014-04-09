@@ -33,8 +33,8 @@ def store_keyid(key, user_name):
     json.dump(user_name_dict, user_name_map_file.open("w"))
     return key.fingerprints[0]
 
-def key_remote_lookup(gpg, user_name):
-    url = 'http://localhost:5000/{}/get_key/'.format(user_name)
+def key_remote_lookup(gpg, config, user_name):
+    url = config['server_url'] + '/{}/get_key/'.format(user_name)
     r = requests.get(url)
     req_obj = r.json()
     if req_obj['status'] == 'SUCCESS':
@@ -44,11 +44,11 @@ def key_remote_lookup(gpg, user_name):
         print('Failed: {}'.format(req_obj['error_message']))
         exit(1)
 
-def get_key_for_user(gpg, user_name):
+def get_key_for_user(gpg, config, user_name):
     fingerprint = key_local_lookup(gpg, user_name)
 
     if fingerprint is None:
-        fingerprint = key_remote_lookup(gpg, user_name)
+        fingerprint = key_remote_lookup(gpg, config, user_name)
 
     key = get_key_from_fingerprint(gpg, fingerprint)
     return key

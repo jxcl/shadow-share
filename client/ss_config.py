@@ -78,11 +78,12 @@ def new_config(CONFIG_DIRECTORY):
     config = {
         "gnupghome": str(gnupg_home),
         "key_id": key_info[0],
-        "fingerprint": key_info[1]
-              }
+        "fingerprint": key_info[1],
+        "server_url": "http://localhost:5000"
+        }
 
     with config_file.open('w') as fp:
-        fp.write(json.dumps(config))
+        fp.write(json.dumps(config, indent=1))
 
     return config
 
@@ -91,4 +92,4 @@ def add_user_name(user_name):
 
     config = json.load(config_file.open("r"))
     config['user_name'] = user_name
-    json.dump(config, config_file.open("w"))
+    json.dump(config, config_file.open("w"), indent=1)
