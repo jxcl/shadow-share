@@ -1,3 +1,4 @@
+"""This module contains all http endpoints"""
 from flask import request, json
 
 import base64
@@ -8,6 +9,7 @@ from server import io
 
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
+    """Receive a file from a user and store it."""
     if request.method == 'POST':
 
         req_obj = request.get_json()
@@ -25,6 +27,7 @@ def store(user_name):
 
 @app.route("/<user_name>/retrieve/")
 def retrieve(user_name):
+    """Get a file from local storage and send it to the user."""
     db = io.get_db()
     file_path = path.join(app.config['UPLOAD_FOLDER'],
                           "{}.stor".format(user_name))
@@ -47,6 +50,7 @@ def retrieve(user_name):
 
 @app.route("/<user_name>/register/", methods=["POST"])
 def register_key(user_name):
+    """Receive a key from the user and index it."""
     db = io.get_db()
 
     if db.user_exists(user_name):
@@ -81,6 +85,7 @@ def register_key(user_name):
 
 @app.route("/<user_name>/get_key/")
 def get_key(user_name):
+    """Send the requested public key to the user."""
     db = io.get_db()
 
     db_lookup_result = db.user_exists(user_name)
