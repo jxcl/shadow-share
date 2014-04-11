@@ -4,20 +4,20 @@ import gnupg
 
 import base64
 
-from server import app, enig_db
+from server import app, shadowdb
 
 def get_db():
     """Create a database connection and attach it to g"""
-    if not hasattr(g, "enig_db"):
-        g.enig_db = enig_db.EnigDB(app.config)
+    if not hasattr(g, "shadowdb"):
+        g.shadowdb = shadowdb.ShadowDB(app.config)
 
-    return g.enig_db
+    return g.shadowdb
 
 @app.teardown_appcontext
 def close_db(error):
     """Tear down db connection."""
-    if hasattr(g, "enig_db"):
-        g.enig_db.close()
+    if hasattr(g, "shadowdb"):
+        g.shadowdb.close()
 
 def file_record(user_name, original_file_name, target_user=None):
     """Put a record of the uploaded file name in the database.

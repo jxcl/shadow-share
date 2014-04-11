@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 
-class EnigDB():
+class ShadowDB():
     """Wrapper around shadowshare database."""
     def __init__(self, config):
         """Connect to the database."""
