@@ -7,18 +7,31 @@ from os import path
 from server import app
 from server import io
 
+def get_db():
+    """Create a database connection and attach it to g"""
+    if not hasattr(g, "shadowdb"):
+        g.shadowdb = shadowdb.ShadowDB(app.config)
+
+    return g.shadowdb
+
+@app.teardown_appcontext
+def close_db(error):
+    """Tear down db connection."""
+    if hasattr(g, "shadowdb"):
+        g.shadowdb.close()
+
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):
     """Receive a file from a user and store it."""
     if request.method == 'POST':
-
+        db = get_db()
         req_obj = request.get_json()
         file_data = base64.b64decode(req_obj["file_data"])
         file_name = req_obj["file_name"]
         file_path = path.join(app.config['UPLOAD_FOLDER'],
                               "{}.stor".format(user_name))
         file_target_user = req_obj["file_target_user"]
-        io.file_record(user_name, file_name, file_target_user)
+        io.file_record(db, user_name, file_name, file_target_user)
 
         with open(file_path, "wb") as fp:
             fp.write(file_data)
@@ -33,7 +46,7 @@ def retrieve(user_name):
                           "{}.stor".format(user_name))
     if db.user_exists(user_name):
         if path.exists(file_path):
-            response = io.open_and_encode_file(user_name, file_path)
+            response = io.open_and_encode_file(db, user_name, file_path)
             return json.jsonify(response)
         else:
             response = {

@@ -4,7 +4,6 @@ import base64
 from unittest import mock
 import server.io
 
-
 class IOTestCase(unittest.TestCase):
 
     def test_file_record_create(self):
@@ -50,4 +49,4 @@ class IOTestCase(unittest.TestCase):
                              }
         self.assertEqual(resp, expected_response)
 
-
+        temp_file.close()
