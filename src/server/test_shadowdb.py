@@ -4,10 +4,11 @@ import server.shadowdb
 
 class ShadowDBTestCase(unittest.TestCase):
     def setUp(self):
-        self.temp_file = tempfile.NamedTemporaryFile()
-        config = {'DB_PATH': self.temp_file.name}
-
+        config = {'DB_PATH': ":memory:"}
         self.db = server.shadowdb.ShadowDB(config)
+
+    def tearDown(self):
+        self.db.close()
 
     def test_nouser(self):
         self.assertFalse(self.db.user_exists("NonExistentUser"))
@@ -21,4 +22,16 @@ class ShadowDBTestCase(unittest.TestCase):
 
         expected_file_name = "test.txt"
         self.assertEquals(self.db.get_file_name("hunter2"), expected_file_name)
+
+    def test_update_file_record(self):
+        first_expected = "test.txt"
+        self.db.create_file_record("hunter2", "hunter2", first_expected)
+        self.assertEquals(self.db.get_file_name("hunter2"),
+                                                first_expected)
+
+        second_expected = "test2.txt"
+        self.db.update_file_record("hunter2", "leroy", second_expected)
+        self.assertEquals(self.db.get_file_name("hunter2"),
+                                                second_expected)
+
 
