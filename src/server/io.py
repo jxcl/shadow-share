@@ -1,31 +1,14 @@
-"""ShadowShare server IO module."""
-from flask import g
-import gnupg
+"""ShadowShare server IO module.
 
+This module handles file IO as well as database IO."""
+import gnupg
 import base64
 
-from server import app, shadowdb
-
-def get_db():
-    """Create a database connection and attach it to g"""
-    if not hasattr(g, "shadowdb"):
-        g.shadowdb = shadowdb.ShadowDB(app.config)
-
-    return g.shadowdb
-
-@app.teardown_appcontext
-def close_db(error):
-    """Tear down db connection."""
-    if hasattr(g, "shadowdb"):
-        g.shadowdb.close()
-
-def file_record(user_name, original_file_name, target_user=None):
+def file_record(db, user_name, original_file_name, target_user=None):
     """Put a record of the uploaded file name in the database.
 
     A record includes the user who uploaded it, the original file
     name and the user for whom the file is meant."""
-
-    db = get_db()
 
     record = db.get_file_record(user_name)
 
@@ -34,9 +17,8 @@ def file_record(user_name, original_file_name, target_user=None):
     else:
         db.update_file_record(user_name, target_user, original_file_name)
 
-def open_and_encode_file(user_name, file_path):
+def open_and_encode_file(db, user_name, file_path):
     """Encode a file in base64 so it can be sent over JSON."""
-    db = get_db()
     file_name = db.get_file_name(user_name)
 
     with open(file_path, "rb") as fp:

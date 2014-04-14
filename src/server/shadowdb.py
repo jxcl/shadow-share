@@ -1,13 +1,45 @@
 import sqlite3
+import pathlib
 from datetime import datetime
 
 class ShadowDB():
     """Wrapper around shadowshare database."""
     def __init__(self, config):
         """Connect to the database."""
+
+        path_to_db = pathlib.Path(config['DB_PATH'])
+        if path_to_db.exists():
+            new_db = False
+        else:
+            new_db = True
+
         self.conn = sqlite3.connect(config['DB_PATH'])
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
+
+        self.check_if_populated()
+
+    def check_if_populated(self):
+        self.cursor.execute("""SELECT name
+                               FROM sqlite_master
+                               WHERE type='table'
+                               AND name='users';""")
+
+        if self.cursor.fetchone() == None:
+            self.init_new_db()
+
+    def init_new_db(self):
+
+        self.cursor.execute("""create table users (
+                                  user_name text primary key,
+                                  public_key text not null
+                               );""")
+        self.cursor.execute("""create table files (
+                                 user_name text primary key,
+                                 target_user_name text,
+                                 original_file_name text,
+                                 date_uploaded text
+                               );""")
 
     def user_exists(self, user_name):
         """Check if the specified user exists in the database."""
