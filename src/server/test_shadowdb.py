@@ -1,14 +1,19 @@
 import unittest
 import tempfile
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 import server.shadowdb
 
 class ShadowDBTestCase(unittest.TestCase):
     def setUp(self):
-        config = {'DB_PATH': ":memory:"}
-        self.db = server.shadowdb.ShadowDB(config)
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        server.shadowdb.Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        self.db = server.shadowdb.ShadowDB(self.session)
 
     def tearDown(self):
-        self.db.close()
+        self.session.close()
 
     def test_nouser(self):
         self.assertFalse(self.db.user_exists("NonExistentUser"))

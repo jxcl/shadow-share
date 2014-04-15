@@ -1,16 +1,18 @@
 """This module contains all http endpoints"""
-from flask import request, json
-
 import base64
+from flask import request, json
+import sqlalchemy
+from sqlalchemy import sessionmaker
 from os import path
-
-from server import app
-from server import io
+from server import app, io, shadowdb
 
 def get_db():
     """Create a database connection and attach it to g"""
     if not hasattr(g, "shadowdb"):
-        g.shadowdb = shadowdb.ShadowDB(app.config)
+        engine = sqlalchemy.create_engine(app.config['DB_URI'])
+        Session = sessionmaker(bind=engine)
+        g.session = Session()
+        g.shadowdb = shadowdb.ShadowDB(g.session)
 
     return g.shadowdb
 
@@ -18,7 +20,7 @@ def get_db():
 def close_db(error):
     """Tear down db connection."""
     if hasattr(g, "shadowdb"):
-        g.shadowdb.close()
+        g.session.close()
 
 @app.route("/<user_name>/store/", methods=["POST"])
 def store(user_name):

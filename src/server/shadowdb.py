@@ -1,102 +1,79 @@
 import sqlite3
 import pathlib
+from sqlalchemy import Column, String, Text
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'users'
+
+    user_name = Column(String, primary_key=True)
+    public_key = Column(Text)
+
+    def __repr__(self):
+        return "<User (user_name='{}')>".format(self.user_name)
+
+class FileRecord(Base):
+    __tablename__ = 'files'
+
+    user_name = Column(String, primary_key=True)
+    target_user = Column(String)
+    original_file_name = Column(String)
+    timestamp = Column(String)
+
+    def __repr__(self):
+        return "<File (file_name='{}' user='{}')>".format(original_file_name,
+                                                          user_name)
+
 class ShadowDB():
-    """Wrapper around shadowshare database."""
-    def __init__(self, config):
-        """Connect to the database."""
 
-        path_to_db = pathlib.Path(config['DB_PATH'])
-        if path_to_db.exists():
-            new_db = False
-        else:
-            new_db = True
-
-        self.conn = sqlite3.connect(config['DB_PATH'])
-        self.conn.row_factory = sqlite3.Row
-        self.cursor = self.conn.cursor()
-
-        self.check_if_populated()
-
-    def check_if_populated(self):
-        self.cursor.execute("""SELECT name
-                               FROM sqlite_master
-                               WHERE type='table'
-                               AND name='users';""")
-
-        if self.cursor.fetchone() == None:
-            self.init_new_db()
-
-    def init_new_db(self):
-
-        self.cursor.execute("""create table users (
-                                  user_name text primary key,
-                                  public_key text not null
-                               );""")
-        self.cursor.execute("""create table files (
-                                 user_name text primary key,
-                                 target_user_name text,
-                                 original_file_name text,
-                                 date_uploaded text
-                               );""")
+    def __init__(self, session):
+        # Remember to check for existence of tables and create them
+        # if they do not exist
+        self.session = session
 
     def user_exists(self, user_name):
-        """Check if the specified user exists in the database."""
-        self.cursor.execute("select * from users where user_name=?",
-                    (user_name,))
+        result_count = self.session.query(User).count()
 
-        result = self.cursor.fetchone()
-        if (result == None):
+        if result_count == 0:
             return False
         else:
-            return (True, result)
+            return True
 
-    def register_user(self, user_name, key):
-        """Add a user to the database with supplied public key."""
-        self.cursor.execute("INSERT INTO users VALUES (?, ?)",
-                            (user_name, key))
-        self.conn.commit()
+    def register_user(self, user_name, pub_key):
+        if self.user_exists(user_name):
+            raise ValueError("The specified user name already exists.")
 
-    def get_file_record(self, user_name):
-        """Return file info of latest uploaded file of the specified user."""
-        self.cursor.execute("SELECT * from files where user_name=?",
-                            (user_name,))
-
-        result = self.cursor.fetchone()
-        return result
-
-    def update_file_record(self, user_name, target_user, original_file_name):
-        """Update the latest file info for specified user."""
-        timestamp = datetime.strftime(datetime.now(),
-                                      "%Y-%m-%dT%H:%M:%S")
-
-        self.cursor.execute("""UPDATE files
-                               SET target_user_name=?,
-                               date_uploaded=?,
-                               original_file_name=?
-                               WHERE user_name=?""",
-                            (target_user, timestamp,
-                             user_name, original_file_name))
-        self.conn.commit()
+        user = User(user_name=user_name, public_key=pub_key)
+        self.session.add(user)
+        self.session.commit()
 
     def get_file_name(self, user_name):
-        """Get the file name of the file stored by a specified user."""
-        self.cursor.execute("SELECT * from files where user_name=?",
-                            (user_name,))
-        result = self.cursor.fetchone()['original_file_name']
-        return result
+        query_result = self.session.query(FileRecord).filter_by(user_name=user_name)
+        if query_result.count() == 0:
+            return None
+        else:
+            name = query_result.first().original_file_name
+            return name
 
-    def create_file_record(self, user_name, target_user,
-                           original_file_name):
+    def create_file_record(self, user_name, target_user, file_name):
+
         timestamp = datetime.strftime(datetime.now(),
                                       "%Y-%m-%dT%H:%M:%S")
+        f = FileRecord(user_name=user_name,
+                       target_user=target_user,
+                       original_file_name=file_name,
+                       timestamp=timestamp)
+        self.session.add(f)
+        self.session.commit()
 
-        self.cursor.execute("INSERT INTO files VALUES (?, ?, ?, ?)",
-                            (user_name, target_user,
-                             original_file_name, timestamp))
-        self.conn.commit()
+    def update_file_record(self, user_name, target_user, file_name):
 
-    def close(self):
-        """Close the connection."""
-        self.conn.close()
+        query_result = self.session.query(FileRecord).filter_by(user_name=user_name)
+        record = query_result.first()
+        record.target_user = target_user
+        record.original_file_name = file_name
+
+        self.session.commit()
