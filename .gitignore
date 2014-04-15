@@ -1,5 +1,9 @@
 *~
 .#*
 __pycache__
-uploads/
-server/shadowshare.db
+uploads
+shadowshare.db
+*.ipynb
+.ipynb_checkpoints/
+gnupg
+example.jpg
