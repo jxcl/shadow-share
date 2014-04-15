@@ -30,17 +30,10 @@ class FileRecord(Base):
 class ShadowDB():
 
     def __init__(self, session):
-        # Remember to check for existence of tables and create them
-        # if they do not exist
         self.session = session
 
-    def user_exists(self, user_name):
-        result_count = self.session.query(User).count()
-
-        if result_count == 0:
-            return False
-        else:
-            return True
+    def user_lookup(self, user_name):
+        return self.session.query(User).first()
 
     def register_user(self, user_name, pub_key):
         if self.user_exists(user_name):
@@ -77,3 +70,6 @@ class ShadowDB():
         record.original_file_name = file_name
 
         self.session.commit()
+
+    def get_file_record(self, user_name):
+        return self.session.query(FileRecord).filter_by(user_name=user_name).first()
