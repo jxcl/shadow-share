@@ -1,23 +1,14 @@
-from flask import g
-import gnupg
+"""ShadowShare server IO module.
 
+This module handles file IO as well as database IO."""
+import gnupg
 import base64
 
-from server import app, enig_db
+def file_record(db, user_name, original_file_name, target_user=None):
+    """Put a record of the uploaded file name in the database.
 
-def get_db():
-    if not hasattr(g, "enig_db"):
-        g.enig_db = enig_db.EnigDB(app.config)
-
-    return g.enig_db
-
-@app.teardown_appcontext
-def close_db(error):
-    if hasattr(g, "enig_db"):
-        g.enig_db.close()
-
-def file_record(user_name, original_file_name, target_user=None):
-    db = get_db()
+    A record includes the user who uploaded it, the original file
+    name and the user for whom the file is meant."""
 
     record = db.get_file_record(user_name)
 
@@ -26,8 +17,8 @@ def file_record(user_name, original_file_name, target_user=None):
     else:
         db.update_file_record(user_name, target_user, original_file_name)
 
-def open_and_encode_file(user_name, file_path):
-    db = get_db()
+def open_and_encode_file(db, user_name, file_path):
+    """Encode a file in base64 so it can be sent over JSON."""
     file_name = db.get_file_name(user_name)
 
     with open(file_path, "rb") as fp:
@@ -41,6 +32,11 @@ def open_and_encode_file(user_name, file_path):
     return response
 
 def key_valid(key_data):
+    """Check if a GPG key is valid.
+
+    This is done by importing it into our GPG keyring and
+    checking the number of keys imported."""
+
     gpg = gnupg.GPG(gnupghome="gnupg")
     import_result = gpg.import_keys(key_data)
 

@@ -14,6 +14,9 @@ def clean_keys(gpg):
 def list_keys(gpg, private):
     print(gpg.list_keys(private))
 
+def sign_key(gpg, key_id):
+    pass
+
 if __name__ == "__main__":
     gpg = gnupg.GPG(gnupghome="gnupg")
     parser = argparse.ArgumentParser()
