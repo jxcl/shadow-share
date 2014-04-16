@@ -1,17 +1,18 @@
 """This module contains all http endpoints"""
 import base64
 from flask import request, json, g
-import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from os import path
-from server import app, io, shadowdb
+from server import app, io, shadowdb, init_engine
 
 def get_db():
     """Create a database connection and attach it to g"""
+    if not hasattr(app, "engine"):
+        init_engine(app)
+
     if not hasattr(g, "shadowdb"):
-        engine = sqlalchemy.create_engine(app.config['DB_URI'])
-        shadowdb.Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
+        shadowdb.Base.metadata.create_all(app.engine)
+        Session = sessionmaker(bind=app.engine)
         g.session = Session()
         g.shadowdb = shadowdb.ShadowDB(g.session)
 

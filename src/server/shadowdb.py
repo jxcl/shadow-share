@@ -1,5 +1,3 @@
-import sqlite3
-import pathlib
 from sqlalchemy import Column, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -24,8 +22,8 @@ class FileRecord(Base):
     timestamp = Column(String)
 
     def __repr__(self):
-        return "<File (file_name='{}' user='{}')>".format(original_file_name,
-                                                          user_name)
+        return "<File (file_name='{}' user='{}')>".format(self.original_file_name,
+                                                          self.user_name)
 
 class ShadowDB():
 

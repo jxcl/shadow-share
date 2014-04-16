@@ -60,6 +60,7 @@ UJtx83U2LaFqnKyBvLRBV0FDGpsdeBAHVBRGcR8QSr3nhpAdKYCwntcHA8JtvVtR
 class ViewsTestCase(unittest.TestCase):
     def setUp(self):
         server.app.config['DB_URI'] = 'sqlite:///:memory:'
+        server.init_engine(server.app)
         self.app = server.app.test_client()
 
     def test_nouser(self):
@@ -69,15 +70,31 @@ class ViewsTestCase(unittest.TestCase):
         self.assertEqual(r_json['status'], 'FAIL')
         self.assertEqual(r_json['error_message'], 'User does not exist.')
 
-    def test_registeruser(self):
-        test_username = 'test-user'
+    def register_user_with_key(self, user_name, key):
+        request_data = {'public_key': key}
 
-        request_data = {'public_key': test_key}
-
-        r = self.app.post('/{}/register/'.format(test_username),
+        r = self.app.post('/{}/register/'.format(user_name),
                           data=json.dumps(request_data),
                           headers={'content-type': 'application/json'})
 
-        print(r.get_data())
         r_json = json.loads(r.get_data().decode('utf-8'))
+
+        return r_json
+
+    def test_register_user(self):
+        test_username = 'test-user'
+
+        r_json = self.register_user_with_key(test_username, test_key)
+
         self.assertEquals(r_json['status'], 'SUCCESS')
+
+    def test_double_register_user(self):
+        test_username = 'test-user'
+
+        r_json = self.register_user_with_key(test_username, test_key)
+        self.assertEquals(r_json['status'], 'SUCCESS')
+
+        r_json = self.register_user_with_key(test_username, test_key)
+        self.assertEquals(r_json['status'], 'FAIL')
+
+

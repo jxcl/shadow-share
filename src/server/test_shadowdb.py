@@ -1,5 +1,4 @@
 import unittest
-import tempfile
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import server.shadowdb
