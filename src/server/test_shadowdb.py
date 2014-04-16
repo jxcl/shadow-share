@@ -16,11 +16,11 @@ class ShadowDBTestCase(unittest.TestCase):
         self.session.close()
 
     def test_nouser(self):
-        self.assertFalse(self.db.user_exists("NonExistentUser"))
+        self.assertEquals(self.db.user_lookup("NonExistentUser"), None)
 
     def test_user_insert(self):
         self.db.register_user("hunter2", "falsekey")
-        self.assertTrue(self.db.user_exists("hunter2"))
+        self.assertTrue(self.db.user_lookup("hunter2"))
 
     def test_create_file_record(self):
         self.db.create_file_record("hunter2", "hunter2", "test.txt")

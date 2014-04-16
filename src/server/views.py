@@ -61,7 +61,7 @@ def retrieve(user_name):
     else:
         response = {
             "status": "FAIL",
-            "error_message": "User does not exist"
+            "error_message": "User does not exist."
             }
         return json.jsonify(response)
 
@@ -70,7 +70,7 @@ def register_key(user_name):
     """Receive a key from the user and index it."""
     db = get_db()
 
-    if db.user_exists(user_name):
+    if db.user_lookup(user_name):
         response = {
             "status": "FAIL",
             "error_message": "Username already taken."
@@ -79,6 +79,14 @@ def register_key(user_name):
         return json.jsonify(response)
     else:
         req_obj = request.get_json()
+
+        if req_obj is None:
+            response = {
+                "status": "FAIL",
+                "error_message": "The json you send could not be parsed."
+                }
+            return json.jsonify(response)
+
         if "public_key" not in req_obj:
             response = {
                 "status": "FAIL",
