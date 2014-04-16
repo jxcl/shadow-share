@@ -38,7 +38,6 @@ def store(user_name):
         io.file_record(db, user_name, file_name, file_target_user)
 
         with open(file_path, "wb") as fp:
-            print("Writing data.")
             fp.write(file_data)
 
         return json.jsonify({"status": "SUCCESS"})
@@ -80,20 +79,6 @@ def register_key(user_name):
         return json.jsonify(response)
     else:
         req_obj = request.get_json()
-
-        if req_obj is None:
-            response = {
-                "status": "FAIL",
-                "error_message": "The json you send could not be parsed."
-                }
-            return json.jsonify(response)
-
-        if "public_key" not in req_obj:
-            response = {
-                "status": "FAIL",
-                "error_message": "You must supply a public key."
-                }
-            return json.jsonify(response)
 
         key = req_obj["public_key"]
         if io.key_valid(key):

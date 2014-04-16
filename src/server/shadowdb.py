@@ -34,9 +34,6 @@ class ShadowDB():
         return self.session.query(User).first()
 
     def register_user(self, user_name, pub_key):
-        if self.user_lookup(user_name):
-            raise ValueError("The specified user name already exists.")
-
         user = User(user_name=user_name, public_key=pub_key)
         self.session.add(user)
         self.session.commit()

@@ -2,6 +2,8 @@ import unittest
 import json
 import server.views
 import server
+import base64
+import tempfile
 
 test_key = '''-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
@@ -59,7 +61,9 @@ UJtx83U2LaFqnKyBvLRBV0FDGpsdeBAHVBRGcR8QSr3nhpAdKYCwntcHA8JtvVtR
 
 class ViewsTestCase(unittest.TestCase):
     def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
         server.app.config['DB_URI'] = 'sqlite:///:memory:'
+        server.app.config['UPLOAD_FOLDER'] = self.temp_dir.name
         server.init_engine(server.app)
         self.app = server.app.test_client()
 
@@ -72,21 +76,43 @@ class ViewsTestCase(unittest.TestCase):
 
     def register_user_with_key(self, user_name, key):
         request_data = {'public_key': key}
-
         r = self.app.post('/{}/register/'.format(user_name),
                           data=json.dumps(request_data),
                           headers={'content-type': 'application/json'})
-
         r_json = json.loads(r.get_data().decode('utf-8'))
-
         return r_json
+
+    def put_file(self, user_name, file_data, target_user=None):
+        if target_user == None:
+            target_user = user_name
+
+        file_data_enc = base64.b64encode(bytearray(file_data, 'utf-8'))
+        payload = {
+            "file_name": "test.txt",
+            "file_data": file_data_enc.decode('utf-8'),
+            "file_target_user": target_user
+            }
+
+        r = self.app.post('/{}/store/'.format(user_name),
+                          data=json.dumps(payload),
+                          headers={'content-type': 'application/json'})
+        return json.loads(r.get_data().decode('utf-8'))
+
+    def get_file(self, user_name):
+        r = self.app.get('/{}/retrieve/'.format(user_name))
+        return json.loads(r.get_data().decode('utf-8'))
 
     def test_register_user(self):
         test_username = 'test-user'
 
         r_json = self.register_user_with_key(test_username, test_key)
-
         self.assertEquals(r_json['status'], 'SUCCESS')
+
+    def test_register_user_badkey(self):
+        test_user = 'test-user'
+        r_json = self.register_user_with_key(test_user, "BOO!")
+        self.assertEquals(r_json['error_message'],
+                          "The provided key is not valid.")
 
     def test_double_register_user(self):
         test_username = 'test-user'
@@ -97,4 +123,38 @@ class ViewsTestCase(unittest.TestCase):
         r_json = self.register_user_with_key(test_username, test_key)
         self.assertEquals(r_json['status'], 'FAIL')
 
+    def test_store(self):
+        test_user = 'test-user'
+        self.register_user_with_key(test_user, test_key)
+        r = self.put_file(test_user, "HELLO THIS IS A TEST")
+        self.assertEquals(r['status'], 'SUCCESS')
 
+        r = self.get_file(test_user)
+        self.assertEquals(r['status'], 'SUCCESS')
+
+    def test_user_nofile(self):
+        test_user = 'test-user'
+        self.register_user_with_key(test_user, test_key)
+
+        r = self.get_file(test_user)
+        self.assertEquals(r['error_message'],
+                          "User does not have a file stored.")
+
+    def test_get_nouser(self):
+        test_user = 'test-user'
+        r = self.get_file(test_user)
+        self.assertEquals(r['error_message'],
+                          "User does not exist.")
+    def test_getkey(self):
+        test_user = 'test-user'
+        self.register_user_with_key(test_user, test_key)
+        r = self.app.get("/{}/get_key/".format(test_user))
+        r_json = json.loads(r.get_data().decode('utf-8'))
+        self.assertEquals(r_json['public_key'], test_key)
+
+
+    def test_getkey_nouser(self):
+        test_user = 'test-user'
+        r = self.app.get("/{}/get_key/".format(test_user))
+        r_json = json.loads(r.get_data().decode('utf-8'))
+        self.assertEquals(r_json['error_message'], "No such user exists.")

@@ -50,3 +50,6 @@ class IOTestCase(unittest.TestCase):
         self.assertEqual(resp, expected_response)
 
         temp_file.close()
+
+    def test_bad_key(self):
+        self.assertFalse(server.io.key_valid("bad_key"))
